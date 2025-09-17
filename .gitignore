@@ -1,0 +1,23 @@
+# ---- Flutter / Dart ----
+**/build/
+**/.dart_tool/
+**/.packages
+**/.flutter-plugins*
+**/.flutter-plugins-dependencies
+**/.idea/
+**/.vscode/
+*.lock
+
+# ---- Python / Django ----
+**/__pycache__/
+**/*.pyc
+**/db.sqlite3
+venv/
+.env
+
+# ---- Logs ----
+*.log
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
