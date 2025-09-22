@@ -25,8 +25,14 @@ class AimLiftApp extends StatelessWidget {
       routes: {
         "/login": (context) => const LoginPage(),
         "/dashboard": (context) {
-          final role = ModalRoute.of(context)!.settings.arguments as String;
-          return DashboardPage(role: role);
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+
+          final role = args["role"] as String? ?? "Client";
+          final name = args["name"] as String? ?? "User";
+
+          return DashboardPage(role: role, name: name);
         },
       },
     );

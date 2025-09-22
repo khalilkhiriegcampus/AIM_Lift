@@ -4,16 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aim_lift_app/core/api_service.dart';
+import 'complaint_dashboard.dart';
 
 class DashboardPage extends StatefulWidget {
   final String role;
-  const DashboardPage({super.key, required this.role});
+  final String name;
+
+  const DashboardPage({super.key, required this.role, required this.name});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  int _selectedIndex = 0; // 0 = Alerts, 1 = Complaints
+
+  // ==== ALERT DASHBOARD STATE ====
   List incidents = [];
   bool isLoading = true;
   Timer? _timer;
@@ -53,11 +59,9 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       } else {
         setState(() => isLoading = false);
-        print("⚠️ Failed to load incidents: ${response.statusCode}");
       }
     } catch (e) {
       setState(() => isLoading = false);
-      print("❌ Error fetching incidents: $e");
     }
   }
 
@@ -76,8 +80,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (response.statusCode == 200) {
         _fetchIncidents();
-      } else {
-        print("⚠️ Failed to $action incident $id: ${response.statusCode}");
       }
     } catch (e) {
       print("❌ Error updating incident: $e");
@@ -95,30 +97,185 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  String _getSeverityLabel(String severity) {
-    switch (severity.toLowerCase()) {
-      case "critical":
-        return "Critical";
-      case "warning":
-        return "Warning";
-      default:
-        return "Normal";
-    }
-  }
-
   Future<void> _logout(BuildContext context) async {
     await ApiService.logout();
     Navigator.pushReplacementNamed(context, "/login");
   }
 
-  // 🔹 KPI Card Helper
-  Widget _buildKpiCard(String title, String value, Color color) {
+  // ==== ALERT DASHBOARD VIEW ====
+  Widget _buildAlertDashboard() {
+    final activeCount = incidents.length;
+    final criticalCount = incidents
+        .where((i) => i["severity"] == "critical")
+        .length;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Greeting
+          Text(
+            "Hello, ${widget.name}!",
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+
+          // KPI Cards
+          Row(
+            children: [
+              _buildStatCard("Active Alerts", "$activeCount", Colors.blue),
+              const SizedBox(width: 12),
+              _buildStatCard("Critical", "$criticalCount", Colors.red),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildStatCard("Avg Response", "3m", Colors.orange),
+              const SizedBox(width: 12),
+              _buildStatCard("SLA", "92%", Colors.green),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // SLA Progress
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "SLA Compliance",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  LinearProgressIndicator(
+                    value: 0.92, // example
+                    backgroundColor: Colors.grey.shade200,
+                    color: Colors.green,
+                    minHeight: 12,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "92% vs Target 90%",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Incident Feed
+          const Text(
+            "Recent Incidents",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (incidents.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text("No active incidents right now"),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: incidents.map((incident) {
+                final severity = incident["severity"] ?? "normal";
+                return Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.warning,
+                              color: _getSeverityColor(severity),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                incident["type"] ?? "Unknown Incident",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text("📍 ${incident["location"] ?? "Unknown"}"),
+                        Text("⏰ ${incident["timestamp"] ?? ""}"),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => _updateIncidentStatus(
+                                incident["id"],
+                                "acknowledge",
+                              ),
+                              child: const Text("Acknowledge"),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () => _updateIncidentStatus(
+                                incident["id"],
+                                "resolve",
+                              ),
+                              child: const Text("Resolve"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ==== KPI Helper ====
+  Widget _buildStatCard(String title, String value, Color color) {
     return Expanded(
       child: Card(
         elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
           child: Column(
             children: [
               Text(
@@ -136,7 +293,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -147,163 +303,49 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final criticalCount = incidents
-        .where((i) => i["severity"] == "critical")
-        .length;
+    final List<Widget> _pages = [
+      _buildAlertDashboard(),
+      ComplaintDashboard(role: widget.role, name: widget.name),
+    ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        backgroundColor: Colors.indigo,
-        title: Text("🚨 Alert Dashboard - ${widget.role}"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          _selectedIndex == 0 ? "🚨 Alert Dashboard" : "📝 Complaint Dashboard",
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () => _logout(context),
-            tooltip: "Logout",
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // 🔹 KPI Summary Row
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      _buildKpiCard(
-                        "Active",
-                        incidents.length.toString(),
-                        Colors.blue,
-                      ),
-                      _buildKpiCard(
-                        "Critical",
-                        criticalCount.toString(),
-                        Colors.red,
-                      ),
-                      _buildKpiCard("Avg Resp.", "3m", Colors.orange),
-                      _buildKpiCard("SLA", "92%", Colors.green),
-                    ],
-                  ),
-                ),
-
-                // 🔹 Incident Grid or Empty State
-                Expanded(
-                  child: incidents.isEmpty
-                      ? const Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.check_box,
-                                color: Colors.green,
-                                size: 28,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                "No active incidents",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(12),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2, // 2 cards per row
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1, // square-ish
-                              ),
-                          itemCount: incidents.length,
-                          itemBuilder: (context, index) {
-                            final incident = incidents[index];
-                            final severity = incident["severity"] ?? "normal";
-
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 4,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.warning,
-                                          color: _getSeverityColor(severity),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            incident["type"] ?? "Unknown",
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      "📍 ${incident["location"]}",
-                                      style: const TextStyle(fontSize: 12),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      "⏰ ${incident["timestamp"]}",
-                                      style: const TextStyle(fontSize: 12),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const Spacer(),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.blue,
-                                          ),
-                                          onPressed: () =>
-                                              _updateIncidentStatus(
-                                                incident["id"],
-                                                "acknowledge",
-                                              ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.check_circle,
-                                            color: Colors.green,
-                                          ),
-                                          onPressed: () =>
-                                              _updateIncidentStatus(
-                                                incident["id"],
-                                                "resolve",
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.indigo,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.warning), label: "Alerts"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message),
+            label: "Complaints",
+          ),
+        ],
+      ),
     );
   }
 }
