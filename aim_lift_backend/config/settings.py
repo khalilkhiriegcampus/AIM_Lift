@@ -144,6 +144,7 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 TEMPLATES[0]['DIRS'] = [BASE_DIR / "templates"]
 STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "landing"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

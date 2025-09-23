@@ -6,25 +6,23 @@
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  <!-- 🔹 Left Column: Active Incidents + SLA Compliance -->
+  <!-- 🔹 Left Column -->
   <div class="space-y-6">
 
     <!-- Active Incidents -->
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-lg font-semibold mb-4">Active Incidents</h2>
-      {% if incidents %}
-        <div class="space-y-4">
-          {% for i in incidents %}
-            <div class="p-4 rounded-lg bg-red-100">
-              <p class="font-bold text-red-700">{{ i.type }}</p>
-              <p class="text-sm text-gray-700">{{ i.time }} | {{ i.premise }}</p>
-              <p class="text-xs text-gray-600">Status: {{ i.status }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-sm text-gray-500">No active incidents</p>
-      {% endif %}
+      <div id="incidents-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+        <p class="text-sm text-gray-500">Loading incidents...</p>
+      </div>
+    </div>
+
+    <!-- Resolved Incidents -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4">Resolved Incidents</h2>
+      <div id="resolved-container" class="space-y-4 max-h-60 overflow-y-auto pr-2">
+        <p class="text-sm text-gray-500">Loading resolved incidents...</p>
+      </div>
     </div>
 
     <!-- SLA Compliance -->
@@ -34,7 +32,7 @@
     </div>
   </div>
 
-  <!-- 🔹 Right Column: Premises Map (takes 2 columns) -->
+  <!-- 🔹 Right Column: Premises Map -->
   <div class="lg:col-span-2 bg-white shadow rounded-lg p-6">
     <h2 class="text-lg font-semibold mb-4">Premises Map</h2>
     <div id="map" class="w-full h-[500px] rounded-lg"></div>
@@ -45,6 +43,8 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  const USER_ROLE = "{{ user_role }}";  // From views.py
+
   const ctx = document.getElementById('slaChart').getContext('2d');
   new Chart(ctx, {
     type: 'bar',
@@ -78,5 +78,90 @@
       .addTo(map)
       .bindPopup("<b>{{ p.name }}</b><br>Status: {{ p.status }}");
   {% endfor %}
+</script>
+
+<!-- Incident Flash Animation -->
+<style>
+  .incident-card { transition: all 0.3s ease-in-out; }
+  .highlight { animation: flash 1s ease-in-out 3; }
+  @keyframes flash {
+    0%   { background-color: #fecaca; }
+    50%  { background-color: #f87171; }
+    100% { background-color: #fecaca; }
+  }
+</style>
+
+<!-- Live Incident Polling -->
+<script>
+let lastIncidentIds = [];
+
+async function resolveIncident(id) {
+  const response = await fetch(`/dashboard/api/incidents/${id}/resolve/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": "{{ csrf_token }}" },
+  });
+  const result = await response.json();
+  if (result.success) {
+    alert("✅ Incident resolved!");
+    loadIncidents(); // reload list
+  } else {
+    alert("❌ " + result.error);
+  }
+}
+
+async function loadIncidents() {
+  try {
+    const response = await fetch("/dashboard/api/incidents/");
+    const data = await response.json();
+
+    const activeContainer = document.getElementById("incidents-container");
+    const resolvedContainer = document.getElementById("resolved-container");
+
+    activeContainer.innerHTML = "";
+    resolvedContainer.innerHTML = "";
+
+    if (data.incidents.length > 0) {
+      const newIds = data.incidents.map(i => i.id);
+
+      data.incidents.forEach(i => {
+        const isNew = !lastIncidentIds.includes(i.id);
+        let cardHTML = `
+          <div class="p-4 rounded-lg ${i.status === "Resolved" ? "bg-gray-200" : "bg-red-100"} incident-card ${isNew ? 'highlight' : ''}">
+            <p class="font-bold ${i.status === "Resolved" ? "text-gray-700" : "text-red-700"}">${i.incident_type}</p>
+            <p class="text-sm text-gray-700">${i.created_at} | ${i.premise}</p>
+            <p class="text-xs text-gray-600">Status: ${i.status}</p>
+        `;
+
+        // Only JKR / CONTRACTOR can resolve
+        if ((USER_ROLE === "JKR" || USER_ROLE === "CONTRACTOR") && i.status !== "Resolved") {
+          cardHTML += `
+            <button onclick="resolveIncident(${i.id})"
+                    class="mt-2 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">
+              Resolve
+            </button>
+          `;
+        }
+
+        cardHTML += "</div>";
+
+        if (i.status === "Resolved") {
+          resolvedContainer.innerHTML += cardHTML;
+        } else {
+          activeContainer.innerHTML += cardHTML;
+        }
+      });
+
+      lastIncidentIds = newIds;
+    } else {
+      activeContainer.innerHTML = `<p class="text-sm text-gray-500">No active incidents</p>`;
+      resolvedContainer.innerHTML = `<p class="text-sm text-gray-500">No resolved incidents</p>`;
+    }
+  } catch (err) {
+    console.error("❌ Error loading incidents:", err);
+  }
+}
+
+loadIncidents();
+setInterval(loadIncidents, 5000);
 </script>
 {% endblock %}
