@@ -37,9 +37,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+
+    # AIM-Lift apps
+    'accounts',
+    'dashboard',
+    'complaints',
+    'aim_core',
+
 ]
 
 MIDDLEWARE = [
@@ -129,3 +139,8 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
+
+AUTH_USER_MODEL = "accounts.User"
+TEMPLATES[0]['DIRS'] = [BASE_DIR / "templates"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
+LOGIN_REDIRECT_URL = "/dashboard/"

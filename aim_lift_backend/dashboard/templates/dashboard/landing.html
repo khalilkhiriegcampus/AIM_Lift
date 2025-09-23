@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Landing - AIM-Lift{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[70vh] text-center">
+  <h1 class="text-4xl font-bold mb-6">Welcome to AIM-Lift</h1>
+  <p class="text-lg text-gray-600 mb-8">
+    Agentic Incident Management for safer and smarter lifts.
+  </p>
+  <a href="{% url 'login' %}" 
+     class="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow hover:bg-indigo-700">
+    Login
+  </a>
+</div>
+{% endblock %}

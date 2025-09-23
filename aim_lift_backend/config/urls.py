@@ -18,9 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import ProfileView
+from dashboard.views import LandingView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("", LandingView.as_view(), name="landing"),
+    path("accounts/", include("accounts.urls")),
+    path("dashboard/", include("dashboard.urls")),
+    path("complaints/", include("complaints.urls")),
+    path("incidents/", include("incidents.urls")),
 
     # Auth endpoints
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
