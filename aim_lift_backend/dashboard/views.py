@@ -1,4 +1,5 @@
 from django.views.generic import TemplateView
+import json
 
 class LandingView(TemplateView):
     template_name = "dashboard/landing.html"
@@ -9,6 +10,11 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context["user_profile"] = {
+            "name": getattr(user, "full_name", user.username),
+            "designation": getattr(user, "designation", "User"),
+        }
 
         # 🔹 Dummy Active Incidents
         context["incidents"] = [
@@ -26,8 +32,5 @@ class DashboardView(TemplateView):
         # 🔹 Dummy SLA compliance data
         context["sla_labels"] = ["JKR", "Contractor A", "Contractor B"]
         context["sla_values"] = [92, 85, 78]
-
-        # 🔹 User info
-        context["user"] = {"username": "JKR Supervisor"}
 
         return context

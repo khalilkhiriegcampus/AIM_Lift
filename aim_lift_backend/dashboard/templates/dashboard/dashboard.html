@@ -1,100 +1,82 @@
+{% extends "base_dashboard.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIM-Lift Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet for map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Chart.js for SLA -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-100">
 
-<div class="flex min-h-screen">
-  <!-- 🔹 Sidebar -->
-  <aside class="w-64 bg-indigo-700 text-white flex flex-col">
-    <div class="p-6 flex items-center space-x-3">
-      <img src="https://via.placeholder.com/40" alt="avatar" class="rounded-full w-10 h-10">
-      <span class="font-semibold">{{ user.username }}</span>
-    </div>
-    <nav class="flex-1 px-4 space-y-2">
-      <a href="#" class="flex items-center px-4 py-2 hover:bg-indigo-600 rounded">🏠 Dashboard</a>
-      <a href="#" class="flex items-center px-4 py-2 hover:bg-indigo-600 rounded">📍 Premises</a>
-      <a href="#" class="flex items-center px-4 py-2 hover:bg-indigo-600 rounded">⚠️ Incidents</a>
-      <a href="#" class="flex items-center px-4 py-2 hover:bg-indigo-600 rounded">📊 Reports</a>
-    </nav>
-  </aside>
+{% block title %}Dashboard - AIM-Lift{% endblock %}
 
-  <!-- 🔹 Main Content -->
-  <main class="flex-1 p-6 space-y-8">
-    <h1 class="text-2xl font-bold mb-4">AIM-Lift Dashboard</h1>
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <!-- Grid of 3 cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
-      <!-- Active Incidents -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-lg font-semibold mb-4">Active Incidents</h2>
-        <div class="space-y-3">
-          {% for incident in incidents %}
-          <div class="p-3 rounded bg-red-100">
-            <p class="text-sm font-bold text-red-700">{{ incident.type }}</p>
-            <p class="text-xs text-gray-600">{{ incident.time }} | {{ incident.premise }}</p>
-            <p class="text-xs">Status: {{ incident.status }}</p>
-          </div>
-          {% empty %}
-          <p class="text-gray-500">No active incidents.</p>
+  <!-- 🔹 Left Column: Active Incidents + SLA Compliance -->
+  <div class="space-y-6">
+
+    <!-- Active Incidents -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4">Active Incidents</h2>
+      {% if incidents %}
+        <div class="space-y-4">
+          {% for i in incidents %}
+            <div class="p-4 rounded-lg bg-red-100">
+              <p class="font-bold text-red-700">{{ i.type }}</p>
+              <p class="text-sm text-gray-700">{{ i.time }} | {{ i.premise }}</p>
+              <p class="text-xs text-gray-600">Status: {{ i.status }}</p>
+            </div>
           {% endfor %}
         </div>
-      </div>
-
-      <!-- Premises Map -->
-      <div class="bg-white shadow rounded-lg p-6 col-span-1 md:col-span-2">
-        <h2 class="text-lg font-semibold mb-4">Premises Map</h2>
-        <div id="map" class="w-full h-64 rounded"></div>
-      </div>
-
+      {% else %}
+        <p class="text-sm text-gray-500">No active incidents</p>
+      {% endif %}
     </div>
 
-    <!-- SLA Chart -->
+    <!-- SLA Compliance -->
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-lg font-semibold mb-4">SLA Compliance</h2>
       <canvas id="slaChart" class="w-full h-64"></canvas>
     </div>
-  </main>
+  </div>
+
+  <!-- 🔹 Right Column: Premises Map (takes 2 columns) -->
+  <div class="lg:col-span-2 bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-semibold mb-4">Premises Map</h2>
+    <div id="map" class="w-full h-[500px] rounded-lg"></div>
+  </div>
+
 </div>
 
-<!-- JS -->
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Leaflet Map
-  var map = L.map('map').setView([3.139, 101.6869], 11);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
-
-  {% for p in premises %}
-    L.marker([{{ p.lat }}, {{ p.lng }}]).addTo(map)
-      .bindPopup("<b>{{ p.name }}</b><br>Status: {{ p.status }}");
-  {% endfor %}
-
-  // SLA Chart
-  var ctx = document.getElementById('slaChart').getContext('2d');
-  var slaChart = new Chart(ctx, {
+  const ctx = document.getElementById('slaChart').getContext('2d');
+  new Chart(ctx, {
     type: 'bar',
     data: {
       labels: {{ sla_labels|safe }},
       datasets: [{
-        label: 'SLA Compliance (%)',
+        label: 'SLA %',
         data: {{ sla_values|safe }},
-        backgroundColor: 'rgba(79, 70, 229, 0.7)' // Indigo
+        backgroundColor: ['#4F46E5', '#22C55E', '#F59E0B'],
       }]
     },
-    options: { scales: { y: { beginAtZero: true, max: 100 } } }
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, max: 100 } }
+    }
   });
 </script>
-</body>
-</html>
+
+<!-- Leaflet.js Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([3.1569, 101.7123], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  {% for p in premises %}
+    L.marker([{{ p.lat }}, {{ p.lng }}])
+      .addTo(map)
+      .bindPopup("<b>{{ p.name }}</b><br>Status: {{ p.status }}");
+  {% endfor %}
+</script>
+{% endblock %}

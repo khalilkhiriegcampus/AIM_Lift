@@ -140,7 +140,10 @@ REST_FRAMEWORK = {
     )
 }
 
-AUTH_USER_MODEL = "accounts.User"
+AUTH_USER_MODEL = "accounts.CustomUser"
 TEMPLATES[0]['DIRS'] = [BASE_DIR / "templates"]
 STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_REDIRECT_URL = "/dashboard/"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
