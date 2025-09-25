@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import ProfileView
-from dashboard.views import LandingView
+from dashboard.views import LandingView, DashboardView, iot_alert
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/profile/", ProfileView.as_view(), name="profile"),
+    path("api/iot/alert/", iot_alert, name="iot_alert"),
 ]
 
 if settings.DEBUG:

@@ -4,111 +4,124 @@
 {% block title %}Dashboard - AIM-Lift{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="flex flex-col h-screen overflow-hidden">
 
-  <!-- 🔹 Left Column -->
-  <div class="space-y-6">
+  <!-- Top Bar -->
+  <header class="bg-white shadow p-4 rounded-lg flex-none">
+    <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
+  </header>
 
-    <!-- Active Incidents -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-lg font-semibold mb-4">Active Incidents</h2>
-      <div id="incidents-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-        <p class="text-sm text-gray-500">Loading incidents...</p>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
+
+    <!-- 🔹 Row 1: Incidents + Map + Resolved -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+
+      <!-- Active Incidents -->
+      <div class="bg-white shadow rounded-lg p-4 flex flex-col overflow-hidden">
+        <h2 class="text-lg font-semibold mb-2">🚨 Active Incidents</h2>
+        <div id="incidents-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
+          <p class="text-sm text-gray-500">Loading incidents...</p>
+        </div>
+      </div>
+
+      <!-- Live Map -->
+      <div class="bg-white shadow rounded-lg p-4 flex flex-col overflow-hidden">
+        <h2 class="text-lg font-semibold mb-2">🗺️ Live Map</h2>
+        <div id="map" class="flex-1 rounded-lg min-h-[300px]"></div>
+      </div>
+
+      <!-- Resolved Incidents -->
+      <div class="bg-white shadow rounded-lg p-4 flex flex-col overflow-hidden">
+        <h2 class="text-lg font-semibold mb-2">✅ Resolved Incidents</h2>
+        <div id="resolved-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
+          <p class="text-sm text-gray-500">Loading resolved incidents...</p>
+        </div>
       </div>
     </div>
 
-    <!-- Resolved Incidents -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-lg font-semibold mb-4">Resolved Incidents</h2>
-      <div id="resolved-container" class="space-y-4 max-h-60 overflow-y-auto pr-2">
-        <p class="text-sm text-gray-500">Loading resolved incidents...</p>
+    <!-- 🔹 Row 2: Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 flex-none">
+      <!-- Active Incidents -->
+      <div class="bg-white rounded-xl shadow p-4 flex flex-col justify-between border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-medium text-gray-600">Active Incidents</h3>
+          <span class="text-gray-400 text-xs">🔴</span>
+        </div>
+        <p class="text-3xl font-extrabold text-red-600 mt-2">{{ active_count|default:"0" }}</p>
+        <p class="text-xs text-gray-500 mt-1">Unattended incidents</p>
+      </div>
+
+      <!-- Unresolved Incidents -->
+      <div class="bg-white rounded-xl shadow p-4 flex flex-col justify-between border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-medium text-gray-600">Unresolved Incidents</h3>
+          <span class="text-gray-400 text-xs">🟡</span>
+        </div>
+        <p class="text-3xl font-extrabold text-yellow-500 mt-2">{{ unresolved_count|default:"0" }}</p>
+        <p class="text-xs text-gray-500 mt-1">Attended but unresolved</p>
+      </div>
+
+      <!-- Response SLA -->
+      <div class="bg-white rounded-xl shadow p-4 flex flex-col justify-between border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-medium text-gray-600">Response SLA</h3>
+          <span class="text-gray-400 text-xs">⏱️</span>
+        </div>
+        <p class="text-3xl font-extrabold text-blue-600 mt-2">{{ response_sla|default:"0" }}%</p>
+        <p class="text-xs text-gray-500 mt-1">On-time responses</p>
+      </div>
+
+      <!-- Resolution SLA -->
+      <div class="bg-white rounded-xl shadow p-4 flex flex-col justify-between border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-medium text-gray-600">Resolution SLA</h3>
+          <span class="text-gray-400 text-xs">✅</span>
+        </div>
+        <p class="text-3xl font-extrabold text-green-600 mt-2">{{ resolution_sla|default:"0" }}%</p>
+        <p class="text-xs text-gray-500 mt-1">On-time resolutions</p>
       </div>
     </div>
 
-    <!-- SLA Compliance -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-lg font-semibold mb-4">SLA Compliance</h2>
-      <canvas id="slaChart" class="w-full h-64"></canvas>
-    </div>
   </div>
-
-  <!-- 🔹 Right Column: Premises Map -->
-  <div class="lg:col-span-2 bg-white shadow rounded-lg p-6">
-    <h2 class="text-lg font-semibold mb-4">Premises Map</h2>
-    <div id="map" class="w-full h-[500px] rounded-lg"></div>
-  </div>
-
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  const USER_ROLE = "{{ user_role }}";  // From views.py
-
-  const ctx = document.getElementById('slaChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: {{ sla_labels|safe }},
-      datasets: [{
-        label: 'SLA %',
-        data: {{ sla_values|safe }},
-        backgroundColor: ['#4F46E5', '#22C55E', '#F59E0B'],
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, max: 100 } }
-    }
-  });
-</script>
-
-<!-- Leaflet.js Map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-  const map = L.map('map').setView([3.1569, 101.7123], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  {% for p in premises %}
-    L.marker([{{ p.lat }}, {{ p.lng }}])
-      .addTo(map)
-      .bindPopup("<b>{{ p.name }}</b><br>Status: {{ p.status }}");
-  {% endfor %}
-</script>
-
-<!-- Incident Flash Animation -->
+<!-- Custom Marker Styles -->
 <style>
-  .incident-card { transition: all 0.3s ease-in-out; }
-  .highlight { animation: flash 1s ease-in-out 3; }
-  @keyframes flash {
-    0%   { background-color: #fecaca; }
-    50%  { background-color: #f87171; }
-    100% { background-color: #fecaca; }
+  .blinking-red {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: red;
+    border: 2px solid white;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+
+  .orange-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: orange;
+    border: 2px solid white;
+  }
+
+  .green-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: green;
+    border: 2px solid white;
   }
 </style>
 
-<!-- Live Incident Polling -->
+<!-- Incident Fetch + Render -->
 <script>
-let lastIncidentIds = [];
-
-async function resolveIncident(id) {
-  const response = await fetch(`/dashboard/api/incidents/${id}/resolve/`, {
-    method: "POST",
-    headers: { "X-CSRFToken": "{{ csrf_token }}" },
-  });
-  const result = await response.json();
-  if (result.success) {
-    alert("✅ Incident resolved!");
-    loadIncidents(); // reload list
-  } else {
-    alert("❌ " + result.error);
-  }
-}
-
 async function loadIncidents() {
   try {
     const response = await fetch("/dashboard/api/incidents/");
@@ -121,28 +134,37 @@ async function loadIncidents() {
     resolvedContainer.innerHTML = "";
 
     if (data.incidents.length > 0) {
-      const newIds = data.incidents.map(i => i.id);
-
       data.incidents.forEach(i => {
-        const isNew = !lastIncidentIds.includes(i.id);
         let cardHTML = `
-          <div class="p-4 rounded-lg ${i.status === "Resolved" ? "bg-gray-200" : "bg-red-100"} incident-card ${isNew ? 'highlight' : ''}">
+          <div class="p-3 rounded-lg ${i.status === "Resolved" ? "bg-gray-100" : "bg-red-100"}">
             <p class="font-bold ${i.status === "Resolved" ? "text-gray-700" : "text-red-700"}">${i.incident_type}</p>
-            <p class="text-sm text-gray-700">${i.created_at} | ${i.premise}</p>
-            <p class="text-xs text-gray-600">Status: ${i.status}</p>
+            <p class="text-sm text-gray-600">${i.created_at} | ${i.premise}</p>
+            <p class="text-xs text-gray-500">Status: ${i.status}</p>
         `;
 
-        // Only JKR / CONTRACTOR can resolve
-        if ((USER_ROLE === "JKR" || USER_ROLE === "CONTRACTOR") && i.status !== "Resolved") {
+        if (i.status === "Detected") {
           cardHTML += `
-            <button onclick="resolveIncident(${i.id})"
-                    class="mt-2 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">
-              Resolve
-            </button>
+            <div class="mt-2 flex gap-2">
+              <button onclick="attendIncident(${i.id})"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-3 py-1 rounded">
+                Attend
+              </button>
+              <button onclick="resolveIncident(${i.id})"
+                class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded">
+                Resolve
+              </button>
+            </div>
           `;
         }
 
-        cardHTML += "</div>";
+        if (i.attended_at) {
+          cardHTML += `<p class="text-xs text-blue-600">Attended at: ${i.attended_at}</p>`;
+        }
+        if (i.resolved_at) {
+          cardHTML += `<p class="text-xs text-green-600">Resolved at: ${i.resolved_at}</p>`;
+        }
+
+        cardHTML += `</div>`;
 
         if (i.status === "Resolved") {
           resolvedContainer.innerHTML += cardHTML;
@@ -150,8 +172,6 @@ async function loadIncidents() {
           activeContainer.innerHTML += cardHTML;
         }
       });
-
-      lastIncidentIds = newIds;
     } else {
       activeContainer.innerHTML = `<p class="text-sm text-gray-500">No active incidents</p>`;
       resolvedContainer.innerHTML = `<p class="text-sm text-gray-500">No resolved incidents</p>`;
@@ -161,7 +181,69 @@ async function loadIncidents() {
   }
 }
 
+async function attendIncident(id) {
+  const res = await fetch(`/dashboard/api/incidents/${id}/attend/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": "{{ csrf_token }}" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Incident attended (" + data.sla_status + ")");
+    loadIncidents();
+  } else {
+    alert("❌ Error: " + data.error);
+  }
+}
+
+async function resolveIncident(id) {
+  const res = await fetch(`/dashboard/api/incidents/${id}/resolve/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": "{{ csrf_token }}" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Incident resolved (" + data.sla_status + ")");
+    loadIncidents();
+  } else {
+    alert("❌ Error: " + data.error);
+  }
+}
+
 loadIncidents();
 setInterval(loadIncidents, 5000);
 </script>
+
+<!-- Leaflet.js -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([3.1569, 101.7123], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const premises = {{ premises|safe }};
+
+  premises.forEach(p => {
+    let markerIcon;
+
+    if (p.status === "Alert") {
+      markerIcon = L.divIcon({ className: "blinking-red" });
+    } else if (p.status === "Attended") {
+      markerIcon = L.divIcon({ className: "orange-marker" });
+    } else {
+      markerIcon = L.divIcon({ className: "green-marker" });
+    }
+
+    const marker = L.marker([p.lat, p.lng], { icon: markerIcon }).addTo(map);
+    marker.bindPopup(`<b>${p.name}</b><br>Status: ${p.status}`);
+  });
+
+  if (premises.length > 0) {
+    const bounds = L.latLngBounds(premises.map(p => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+</script>
+
 {% endblock %}
