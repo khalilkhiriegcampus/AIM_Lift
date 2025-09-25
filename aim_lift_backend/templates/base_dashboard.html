@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AIM-Lift Dashboard{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- 🔹 Sidebar -->
+  <aside class="hidden md:flex w-64 bg-indigo-800 text-white flex-col shadow-lg fixed top-0 left-0 h-screen">
+    <!-- Profile -->
+    <a href="{% url 'profile_update' %}" class="block">
+      <div class="p-6 flex items-center space-x-3 border-b border-indigo-700 hover:bg-indigo-700 transition">
+        {% if user.profile_picture %}
+          <img src="{{ user.profile_picture.url }}" alt="avatar" 
+              class="rounded-full w-10 h-10 ring-2 ring-white object-cover">
+        {% else %}
+          <img src="https://via.placeholder.com/40" alt="avatar" 
+              class="rounded-full w-10 h-10 ring-2 ring-white">
+        {% endif %}
+        <div>
+          <p class="font-semibold">{{ user.full_name|default:user.username }}</p>
+          <p class="text-xs text-indigo-200">{{ user.designation|default:"No Designation" }}</p>
+          <p class="text-[10px] text-indigo-300 italic">Update Profile</p>
+        </div>
+      </div>
+    </a>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <a href="{% url 'dashboard' %}" 
+        class="flex items-center space-x-3 px-4 py-2 rounded-lg transition 
+        {% if request.resolver_match.url_name == 'dashboard' %} bg-indigo-600 font-semibold {% else %} hover:bg-indigo-700 {% endif %}">
+        <span class="material-icons">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'complaints' %}" 
+        class="flex items-center space-x-3 px-4 py-2 rounded-lg transition 
+        {% if request.resolver_match.url_name == 'complaints' %} bg-indigo-600 font-semibold {% else %} hover:bg-indigo-700 {% endif %}">
+        <span class="material-icons">warning</span>
+        <span>Complaints</span>
+      </a>
+      <a href="{% url 'team' %}" 
+        class="flex items-center space-x-3 px-4 py-2 rounded-lg transition 
+        {% if request.resolver_match.url_name == 'team' %} bg-indigo-600 font-semibold {% else %} hover:bg-indigo-700 {% endif %}">
+        <span class="material-icons">groups</span>
+        <span>Team</span>
+      </a>
+    </nav>
+
+    <!-- 🔹 Logout -->
+    <div class="px-4 py-3 border-t border-indigo-700">
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full flex items-center space-x-3 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white">
+          <span class="material-icons">logout</span>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-4 border-t border-indigo-700 text-xs text-indigo-200">
+      © 2025 AIM-Lift
+    </div>
+  </aside>
+
+  <!-- 🔹 Main Content -->
+  <main class="flex-1 ml-0 md:ml-64 p-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

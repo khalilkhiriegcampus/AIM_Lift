@@ -1,0 +1,73 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Update Profile - AIM-Lift{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white shadow-lg rounded-2xl p-8">
+  <h2 class="text-2xl font-bold text-gray-800 mb-6">Update Profile</h2>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Full Name -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+      <input type="text" name="full_name" value="{{ form.full_name.value|default_if_none:'' }}"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    </div>
+
+    <!-- Designation -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+      <input type="text" name="designation" value="{{ form.designation.value|default_if_none:'' }}"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+      <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    </div>
+
+    <!-- Mobile Number -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+      <input type="text" name="mobile_number" value="{{ form.mobile_number.value|default_if_none:'' }}"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    </div>
+
+    <!-- Company Name -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+      <input type="text" name="company_name" value="{{ form.company_name.value|default_if_none:'' }}"
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    </div>
+
+    <!-- Profile Picture -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Profile Picture</label>
+      {% if user.profile_picture %}
+        <div class="flex items-center space-x-4 mb-2">
+          <img src="{{ user.profile_picture.url }}" alt="Current Profile Picture"
+               class="w-16 h-16 rounded-full object-cover ring-2 ring-indigo-500">
+          <span class="text-sm text-gray-500">Current picture</span>
+        </div>
+      {% endif %}
+      <input type="file" name="profile_picture"
+             class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                    file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+      <button type="submit"
+              class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium shadow hover:bg-indigo-700 transition">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

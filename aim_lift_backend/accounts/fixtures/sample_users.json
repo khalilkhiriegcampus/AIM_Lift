@@ -1,0 +1,35 @@
+[
+  {
+    "model": "accounts.user",
+    "pk": 2,
+    "fields": {
+      "username": "jkr_user",
+      "password": "pbkdf2_sha256$600000$Xh5KqZP6VslQyJvNwYpG5H$XqV3JJkV4W1CnnXTX8tYyl8iXgVUlUnUqgkqs6dx5jA=",
+      "email": "jkr@example.com",
+      "role": "JKR",
+      "is_active": true
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 3,
+    "fields": {
+      "username": "contractor_user",
+      "password": "pbkdf2_sha256$600000$Xh5KqZP6VslQyJvNwYpG5H$XqV3JJkV4W1CnnXTX8tYyl8iXgVUlUnUqgkqs6dx5jA=",
+      "email": "contractor@example.com",
+      "role": "CONTRACTOR",
+      "is_active": true
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 4,
+    "fields": {
+      "username": "client_user",
+      "password": "pbkdf2_sha256$600000$Xh5KqZP6VslQyJvNwYpG5H$XqV3JJkV4W1CnnXTX8tYyl8iXgVUlUnUqgkqs6dx5jA=",
+      "email": "client@example.com",
+      "role": "CLIENT",
+      "is_active": true
+    }
+  }
+]
