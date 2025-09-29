@@ -22,5 +22,5 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Firebase service account key
-config/firebase_key.json
+# Firebase service account
+aim_lift_backend/config/firebase_key.json
